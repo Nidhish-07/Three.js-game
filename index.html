@@ -31,38 +31,84 @@
   );
 
   const renderer = new THREE.WebGLRenderer();
-  renderer.shadowMap.enabled=true
+  renderer.shadowMap.enabled = true;
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
   const controls = new OrbitControls(camera, renderer.domElement);
 
-  const geometry = new THREE.BoxGeometry(1, 1, 1);
-  const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-  const cube = new THREE.Mesh(geometry, material);
-  cube.castShadow=true
+  class Box extends THREE.Mesh {
+    constructor({
+      widht,
+      height,
+      depth,
+      color = "#00ff00",
+      velocity = {
+        x: 0,
+        y: 0,
+        z: 0,
+      },
+      position = {
+        x: 0,
+        y: 0,
+        z: 0,
+      },
+    }) {
+      super(
+        new THREE.BoxGeometry(widht, height, depth),
+        new THREE.MeshStandardMaterial({ color })
+      );
+
+      this.height = height;
+      this.widht = widht;
+      this.depth = depth;
+      this.bottom = this.position.y - this.height / 2;
+      this.top = this.position.y + this.height / 2;
+      this.velocity = velocity;
+      this.position.set(position.x, position.y, position.z);
+    }
+    update() {
+      this.bottom = this.position.y - this.height / 2;
+      this.top = this.position.y + this.height / 2;
+      this.position.y += this.velocity.y;
+
+      if (this.bottom <= ground.top) this.velocity = 0;
+    }
+  }
+
+  const cube = new Box({
+    widht: 1,
+    height: 1,
+    depth: 1,
+    color: 0x00ff00,
+    velocity: { x: 0, y: -0.01, z: 0 },
+  });
+  cube.castShadow = true;
   scene.add(cube);
+  console.log(cube.position.y - cube.height / 2);
 
-  
-  const ground = new THREE.Mesh(new THREE.BoxGeometry(5,0.4,10),new THREE.MeshStandardMaterial({color:0x0000ff}))
- ground.position.y=-2;
- ground.receiveShadow=true
-  scene.add(ground)
+  const ground = new Box({ widht: 5, height: 0.4, depth: 10, color: 0x0000ff });
+  ground.position.y = -2;
+  ground.receiveShadow = true;
+  scene.add(ground);
+  console.log(ground.position.y + ground.height / 2);
 
-
-  const light=new THREE.DirectionalLight(0xffffff,1);
-  light.position.z=2
-  light.position.y=3
-  light.castShadow=true
-  scene.add(light)
+  const light = new THREE.DirectionalLight(0xffffff, 1);
+  light.position.z = 2;
+  light.position.y = 3;
+  light.castShadow = true;
+  scene.add(light);
 
   camera.position.z = 5;
 
   function animate() {
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
-    cube.rotation.x += 0.01;
-    cube.rotation.y += 0.01;
+
+    cube.update(ground);
+    // cube.position.y+=0.01
+    // cube.rotation.x += 0.01;
+    // cube.rotation.y += 0.01;
   }
   animate();
 </script>
